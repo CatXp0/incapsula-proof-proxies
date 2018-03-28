@@ -1,0 +1,90 @@
+{
+  "vendorSub": "",
+  "productSub": "20030107",
+  "vendor": "Google Inc.",
+  "maxTouchPoints": 0,
+  "hardwareConcurrency": 4,
+  "appCodeName": "Mozilla",
+  "appName": "Netscape",
+  "appVersion": "5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.98 Safari/537.36",
+  "platform": "Linux x86_64",
+  "product": "Gecko",
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.98 Safari/537.36",
+  "language": "en-US",
+  "languages": [
+    "en-US",
+    "en"
+  ],
+  "onLine": true,
+  "cookieEnabled": true,
+  "doNotTrack": null,
+  "geolocation": {},
+  "mediaDevices": {},
+  "plugins": {
+    "0": {
+      "0": {
+        "description": "",
+        "suffixes": "pdf",
+        "type": "application/pdf",
+        "enabledPlugin": {
+          "description": "",
+          "filename": "mhjfbmdgcfjbbpaeojofohoefgiehjai",
+          "length": 1,
+          "name": "Chromium PDF Viewer"
+        }
+      },
+      "description": "",
+      "filename": "mhjfbmdgcfjbbpaeojofohoefgiehjai",
+      "name": "Chromium PDF Viewer",
+      "length": 1
+    },
+    "1": {
+      "0": {
+        "description": "Portable Document Format",
+        "suffixes": "pdf",
+        "type": "application/x-google-chrome-pdf",
+        "enabledPlugin": {
+          "description": "Portable Document Format",
+          "filename": "internal-pdf-viewer",
+          "length": 1,
+          "name": "Chromium PDF Viewer"
+        }
+      },
+      "description": "Portable Document Format",
+      "filename": "internal-pdf-viewer",
+      "name": "Chromium PDF Viewer",
+      "length": 1
+    }
+  },
+  "mimeTypes": {
+    "0": {
+      "description": "",
+      "enabledPlugin": {
+        "description": "",
+        "filename": "mhjfbmdgcfjbbpaeojofohoefgiehjai",
+        "length": 1,
+        "name": "Chromium PDF Viewer"
+      },
+      "suffixes": "pdf",
+      "type": "application/pdf"
+    },
+    "1": {
+      "description": "Portable Document Format",
+      "enabledPlugin": {
+        "description": "Portable Document Format",
+        "filename": "internal-pdf-viewer",
+        "length": 1,
+        "name": "Chromium PDF Viewer"
+      },
+      "suffixes": "pdf",
+      "type": "application/x-google-chrome-pdf"
+    }
+  },
+  "webkitTemporaryStorage": {},
+  "webkitPersistentStorage": {},
+  "serviceWorker": {},
+  "credentials": {},
+  "storage": {},
+  "permissions": {},
+  "presentation": {}
+}

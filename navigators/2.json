@@ -1,0 +1,87 @@
+{
+  "mozPay": null,
+  "mozContacts": {},
+  "mozApps": {},
+  "mimeTypes": {
+    "0": {},
+    "1": {},
+    "2": {},
+    "application/futuresplash": {},
+    "application/x-gnome-shell-integration": {},
+    "application/x-shockwave-flash": {}
+  },
+  "plugins": {
+    "0": {
+      "0": {},
+      "application/x-gnome-shell-integration": {},
+      "description": "This plugin provides integration with Gnome Shell for live extension enabling and disabling. It can be used only by extensions.gnome.org",
+      "filename": "libgnome-shell-browser-plugin.so",
+      "length": 1,
+      "name": "Gnome Shell Integration",
+      "version": ""
+    },
+    "1": {
+      "0": {},
+      "1": {},
+      "application/x-shockwave-flash": {},
+      "application/futuresplash": {},
+      "description": "Shockwave Flash 13.1 r2",
+      "filename":"libfreshwrapper-flashplayer.so",
+      "length": 2,
+      "name": "Shockwave Flash",
+      "version":"13.1.2.3"
+    },
+    "Gnome Shell Integration": {
+      "0": {
+        "description": "Gnome Shell Integration Dummy Content-Type",
+        "enabledPlugin": {},
+        "suffixes": "",
+        "type": "application/x-gnome-shell-integration"
+      },
+      "application/x-gnome-shell-integration": {
+        "description": "Gnome Shell Integration Dummy Content-Type",
+        "enabledPlugin": {},
+        "suffixes": "",
+        "type": "application/x-gnome-shell-integration"
+      },
+      "description": "This plugin provides integration with Gnome Shell for live extension enabling and disabling. It can be used only by extensions.gnome.org",
+      "filename": "libgnome-shell-browser-plugin.so",
+      "length": 1,
+      "name": "Gnome Shell Integration",
+      "version": ""
+    },
+    "Shockwave Flash": {
+      "0": {},
+      "1": {},
+      "application/x-shockwave-flash": {},
+      "application/futuresplash": {},
+      "description": "Shockwave Flash 13.1 r2",
+      "filename":"libfreshwrapper-flashplayer.so",
+      "length": 2,
+      "name": "Shockwave Flash",
+      "version":"13.1.2.3"
+    }
+  },
+  "doNotTrack": "unspecified",
+  "battery": {},
+  "oscpu": "Linux x86_64",
+  "vendor": "",
+  "vendorSub": "",
+  "productSub": "20100101",
+  "cookieEnabled": true,
+  "buildID": "20170419042421",
+  "mediaDevices": {},
+  "geolocation": {},
+  "appCodeName": "Mozilla",
+  "appName": "Netscape",
+  "appVersion": "5.0 (X11)",
+  "platform": "Linux x86_64",
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0",
+  "product": "Gecko",
+  "language": "en-US",
+  "languages": [
+    "en-US",
+    "en"
+  ],
+  "onLine": true
+}
