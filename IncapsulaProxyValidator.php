@@ -14,38 +14,50 @@ class IncapsulaProxyValidator
 
     private $_strProxyVerifyLink = '_Incapsula_Resource?'; //SWKMTFSR=1&e=
 
+    /* Static link, the domain+this resource contains the functions needed, but obfuscated.
+     * This is the link to check in case the plugin keeps failing, it may be because something
+     * changed inside the obfuscated functions.
+     */
+    private $_strCookieConstructResource          = '_Incapsula_Resource?SWJIYLWA=2977d8d74f63d7f8fedbea018b7a1d05&ns=2';
+
     private $_arrCookieConfig           = array(
         "navigator"=>"exists",
         "navigator.vendor"=>"value",
         "navigator.appName"=>"value",
         "navigator.plugins.length==0"=>"value",
         "navigator.platform"=>"value",
-        "navigator.webdriver==undefined"=>"value",
+        "navigator.webdriver"=>"value",
         "platform"=>"plugin_extentions",
-        "ActiveXObject"=>"false",
+        "ActiveXObject"=>"exists",
         "webkitURL"=>"exists",
-        "_phantom"=>"false",
-        "callPhantom"=>"false",
+        "_phantom"=>"exists",
+        "callPhantom"=>"exists",
         "chrome"=>"exists",
-        "yandex"=>"false",
-        "opera"=>"false",
-        "opr"=>"false",
-        "safari"=>"false",
-        "awesomium"=>"false",
-        "puffinDevice"=>"false",
-        "__nightmare"=>"false",
-        "_Selenium_IDE_Recorder"=>"false",
-        "document.__webdriver_script_fn"=>"false",
-        'document.$cdc_asdjflasutopfhvcZLmcfl_'=>"false",
-        "process.version"=>"false",
-        "navigator.cpuClass"=>"false",
-        "navigator.oscpu"=>"value",
-        "navigator.connection"=>"false",
-        "window.outerWidth==1920"=>"value",
-        "window.outerHeight==1053"=>"value",
+        "yandex"=>"exists",
+        "opera"=>"exists",
+        "opr"=>"exists",
+        "safari"=>"exists",
+        "awesomium"=>"exists",
+        "puffinDevice"=>"exists",
+        "__nightmare"=>"exists",
+        "spawn"=>"exists",
+        "emit"=>"exists",
+        "Buffer"=>"exists",
+        "domAutomation"=>"exists",
+        "domAutomationController"=>"exists",
+        "_Selenium_IDE_Recorder"=>"exists",
+        "document.__webdriver_script_fn"=>"exists",
+        'document.$cdc_asdjflasutopfhvcZLmcfl_'=>"exists",
+        "process.version"=>"exists",
+        "navigator.cpuClass"=>"exists",
+        "navigator.oscpu"=>"exists",
+        "navigator.connection"=>"exists",
+        "navigator.language=='C'"=>"value",
+        "window.outerWidth==0"=>"value",
+        "window.outerHeight==0"=>"value",
         "window.WebGLRenderingContext"=>"exists",
-        "document.documentMode==undefined"=>"value",
-        "eval.toString().length==33"=>"value"
+        "document.documentMode"=>"value",
+        "eval.toString().length"=>"value"
     );
 
     /* user agents to use when making requests*/
@@ -124,9 +136,27 @@ class IncapsulaProxyValidator
                     $strResponse = $this->_getPage($this->_strDomain, $arrProxy);
                     if(!$strResponse)
                     {
-                        print_r("couldn't get ".$this->_strDomain.PHP_EOL);
                         continue;
                     }
+
+                    // if Incapsula assigns a resource to the request, it means that the client is ready to be validated,
+                    // otherwise it has already been categorised as a bot
+                    if(preg_match('%(\/_Incapsula_Resource.*?),%s',$strResponse, $arrResp ))
+                    {
+                        $strResponse = $this->_getPage($this->_strDomain.'/'.$this->_strCookieConstructResource, $arrProxy, false);
+
+                        if(!$strResponse)
+                        {
+                            print_r("$strDebugString Proxy ".$arrProxy['IP:PORT'].' failed! Couldn\'t get '.$this->_strDomain.'/'.$this->_strCookieConstructResource);
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        print_r("$strDebugString Didn't find incapsula resource code in the request with ".$arrProxy['IP:PORT']);
+                        continue;
+                    }
+
                     $strObfuscatedCode = $this->_getObfuscatedCode($strResponse);
                     if(!$strObfuscatedCode)
                     {
@@ -136,14 +166,20 @@ class IncapsulaProxyValidator
                     $arrTiming = array();
                     $intTimeStart = round(microtime(true)*1000);
 
-                    $arrResources = $this->_decodeObfuscatedCode($strObfuscatedCode);
-                    if(!$arrResources || count($arrResources) < 2)
+                    $strDecoded = $this->_decodeObfuscatedCode($strObfuscatedCode);
+
+                    // get the unique salt that is generated everytime in the obfuscated javascript
+                    if(preg_match('%var sl = "(.*?)"%s', $strDecoded, $arrMatchSalt))
                     {
-                        print_r("$strDebugString Error! Couldn't get link resources from the obfuscated code block for ".$arrProxy['IP:PORT'].PHP_EOL);
-                        return false;
+                        $strSalt = $arrMatchSalt[1];
+                    }
+                    else
+                    {
+                        $this->GetLogger()->WriteMessage("$strDebugString Couldn't get salt string from " .$this->_strDomain.'/'.$this->_strCookieConstructResource . ' with ' . $arrProxy['IP:PORT']);
+                        continue;
                     }
 
-                    $this->_strProxyVerifyLink .= $arrResources[0];
+//                    $this->_strProxyVerifyLink .= $arrResources[0];
 
                     print_r("$strDebugString Loading data and navigator plugins to create Incapsula cookie for ".$arrProxy['IP:PORT'].PHP_EOL);
 
@@ -157,19 +193,22 @@ class IncapsulaProxyValidator
                     $arrExtensions = $this->_getNavigatorProperties($objNavigator, $this->_arrCookieConfig);
 
                     //setting incapsula cookie
-                    $strIncapsulaCookie = $this->_setIncapsulaCookie($arrExtensions, $arrProxy['IP:PORT']);
+                    $strIncapsulaCookie = $this->_setIncapsulaCookie($arrExtensions, $arrProxy['IP:PORT'], $strSalt);
                     if(!$strIncapsulaCookie)
                     {
                         print_r("$strDebugString Couldn't find the cookie for ".$arrProxy['IP:PORT'].PHP_EOL);
                         continue;
                     }
 
-                    print_r("$strDebugString Requesting access link #1: " . $this->_strDomain.$arrResources[1] . ' with '.$arrProxy['IP:PORT'].PHP_EOL);
+                    //this request just needs to be done, the request response is not needed
+                    $strUrlReqTest = $this->_getPage( $this->_strDomain.$arrResp[1], $arrProxy, $strIncapsulaCookie);
+
+                    print_r("$strDebugString Requesting access link #1: " . $this->_strDomain.$arrResp[1] . ' with '.$arrProxy['IP:PORT'].PHP_EOL);
                     $bolAccessGranted = false;
                     for($intI = 0; $intI < self::SAME_PROXY_RETRIES; $intI++)
                     {
                         $arrTiming[] = 's:'.(round(microtime(true)*1000)-$intTimeStart);
-                        $strResponse = $this->_getPage($this->_strDomain . $arrResources[1], $arrProxy, $strIncapsulaCookie);
+                        $strResponse = $this->_getPage($this->_strDomain . $arrResp[1], $arrProxy, $strIncapsulaCookie);
                         if($strResponse)
                         {
                             $bolAccessGranted = true;
@@ -303,34 +342,28 @@ class IncapsulaProxyValidator
 
     /**
      * Function that decodes the hexa string and returns the
-     * link resources inside it
+     * deobfuscated javascript code
      *
      * @param $strCode
      * @return string
      */
     private function _decodeObfuscatedCode($strCode)
     {
-        $arrData = array();
-        $strDecoded = '';
-        $arrChunks = explode("\n",chunk_split($strCode, 2));
-        foreach($arrChunks as $strChunk)
-        {
-            $arrData[] = intval(strval($strChunk), 16);
+        // decode the hexadecimal string
+        $strBin = "";
+        $intCodeLength = strlen( $strCode );
+        for ( $intI = 0; $intI < $intCodeLength; $intI += 2 ) {
+            $strBin .= pack( "H*", substr( $strCode, $intI, 2 ) );
         }
-        foreach($arrData as $intX)
-        {
-            $strDecoded .= chr($intX);
-        }
-        if(preg_match_all('%(\/_Incapsula_Resource.*?)\"%s', $strDecoded, $arrResources))
-        {
-            return $arrResources[1];
-        }
-        return false;
+
+        return $strBin;
     }
 
     /**
      * Create navigator properties using a random navigator
-     * and the config file found in the decoded JS block
+     * and the config file found in the decoded JS block.
+     * WARNING. Change only if you are sure of what you're doing,
+     * otherwise the validation won't work
      *
      * @param $objNavigator
      * @param $arrConfig
@@ -342,64 +375,76 @@ class IncapsulaProxyValidator
 
         foreach($arrConfig as $strKey => $strItem)
         {
-            if($strKey === 'navigator.plugins.length==0')
-            {
-                $arrProperties[] = urlencode($strKey.'=false');
-                continue;
-            }
             switch($strItem)
             {
                 case 'exists':
-                    $arrProperties[] = urlencode($strKey.'=true');
-                    break;
-                case 'false':
-                    $arrProperties[] = urlencode($strKey.'=false');
+                    switch($strKey)
+                    {
+                        case 'navigator':
+                        case 'window.WebGLRenderingContext':
+                            $arrProperties[] = urlencode($strKey.'=true');
+                            break;
+                        case 'chrome':
+                        case 'webkitURL':
+                        case 'navigator.connection':
+                            if(strpos($objNavigator->userAgent, 'Chrome') !== false)
+                                $arrProperties[] = urlencode($strKey.'=true');
+                            else
+                                $arrProperties[] = urlencode($strKey.'=false');
+                            break;
+                        case 'navigator.oscpu':
+                            if(strpos($objNavigator->userAgent, 'Chrome') !== false)
+                                $arrProperties[] = urlencode($strKey.'=false');
+                            else
+                                $arrProperties[] = urlencode($strKey.'=true');
+                            break;
+                        default:
+                            $arrProperties[] = urlencode($strKey.'=false');
+                            break;
+                    }
                     break;
                 case 'value':
-                    if(strpos($strKey, '==') !== false)
+                    switch($strKey)
                     {
-                        if(preg_match('%([\(\)a-zA-Z\._0-9\$]+?)==(\d{0,})$%s', $strKey, $arrExpression))
-                        {
-                            $arrProperties[] = urlencode($arrExpression[1].'='.$arrExpression[2]);
-                        }
-                        else if(preg_match('%([a-zA-Z\._0-9\$]+?)==undefined%s', $strKey, $arrExpression))
-                        {
-                            $arrProperties[] = urlencode($arrExpression[1].'=undefined');
-                        }
-                    }
-                    else
-                    {
-                        $arrElements = explode('.', $strKey);
-                        switch($arrElements[0])
-                        {
-                            case 'navigator':
-                                if(isset($objNavigator->$arrElements[1]))
-                                {
-                                    $arrProperties[] = urlencode($strKey.'='.$objNavigator->$arrElements[1]);
-                                }
-                                else
-                                {
-                                    $arrProperties[] = urlencode($strKey.'=null');
-                                }
-                        }
+                        case 'navigator.plugins.length==0':
+                        case "navigator.language=='C'":
+                        case 'window.outerWidth==0':
+                        case 'window.outerHeight==0':
+                            $arrProperties[] = urlencode($strKey.'=false');
+                            break;
+                        case 'document.documentMode':
+                            $arrProperties[] = urlencode($strKey.'=undefined');
+                            break;
+                        case 'eval.toString().length':
+                            // TO CHANGE AND VERIFY IN BROWSER CONSOLE WITH THIS FUNCTION 'eval.toString().length' IF YOU UPLOAD ANOTHER NAVIGATORS
+                            if(strpos($objNavigator->userAgent, 'Chrome') !== false)
+                                $arrProperties[] = urlencode($strKey.'=33');
+                            else
+                                $arrProperties[] = urlencode($strKey.'=37');
+                            break;
+                        default:
+                            $arrElements = explode('.', $strKey);
+                            switch($arrElements[0])
+                            {
+                                case 'navigator':
+                                    if(isset($objNavigator->$arrElements[1]))
+                                    {
+                                        $arrProperties[] = urlencode($strKey.'='.$objNavigator->$arrElements[1]);
+                                    }
+                                    else
+                                    {
+                                        $arrProperties[] = urlencode($strKey.'=undefined');
+                                    }
+                                    break;
+                            }
+
                     }
                     break;
                 case 'plugin_extentions':
-                    foreach($objNavigator->plugins as $objPlugin)
-                    {
-                        if(!isset($objPlugin->filename))
-                        {
-                            $arrProperties[] = urlencode("plugin_ext=filename is undefined");
-                            continue;
-                        }
-                        $arrSeparateExtension = explode('.',$objPlugin->filename);
-                        $strExt = "no extention"; //yes I know, but that's the way it is in the incapsula JS. Do NOT modify
-                        if(count($arrSeparateExtension) == 2)
-                        {
-                            $strExt = $arrSeparateExtension[0];
-                        }
-                        $arrProperties[] = urlencode("plugin_ext=".$strExt);
-                    }
+                    // TO CHANGE IF YOU UPLOAD ANOTHER NAVIGATORS
+                    $arrProperties[] = urlencode('plugin_ext=so');
+                    if(strpos($objNavigator->userAgent, 'Chrome') !== false)
+                        $arrProperties[] = urlencode('plugin_ext=no extention'); //yes I know, but that's the way it is in the incapsula JS. Do NOT modify
                     break;
                 default:
                     break;
@@ -409,13 +454,34 @@ class IncapsulaProxyValidator
     }
 
     /**
+     * The asl value is a string constructed from an unique salt
+     * and the digest of cookies that start with incap_ses_ .
+     * This value must be set in the incapsula cookie
+     *
+     * @param $strDigests
+     * @param $strSalt
+     * @return mixed
+     */
+    private function _getIncapsulaAsl($strDigests, $strSalt)
+    {
+        $strAsl = "";
+        for($intI=0; $intI<strlen($strSalt); $intI++)
+        {
+            $strAsl .= strtolower(dechex(ord($strSalt[$intI]) . ord($strDigests[$intI % strlen($strDigests)])));
+        }
+        return $strAsl;
+    }
+
+    /**
      * Function that creates and returns a specific Incapsula cookie
      * that allows the IP to be validated
      *
      * @param $arrExtensions
-     * @return string
+     * @param $strProxy
+     * @param $strSalt
+     * @return bool|string
      */
-    private function _setIncapsulaCookie($arrExtensions, $strProxy)
+    private function _setIncapsulaCookie($arrExtensions, $strProxy, $strSalt)
     {
         $strCookieFilename = $this->_strCookieFolder.'/cookie-'.$strProxy.'.txt';
         if(!file_exists($strCookieFilename))
@@ -437,7 +503,13 @@ class IncapsulaProxyValidator
             $arrDigests[$intI] = $this->_toDigest(implode(',',$arrExtensions) . $strSessionCookie);
             $intI++;
         }
-        $strNewCookieValue = implode(',',$arrExtensions) . ",digest=" . implode(',',$arrDigests);
+
+        // starting new fancy schmancy logic of incapsula...
+        $strDigests = implode(',',$arrDigests);
+        // construct a string out of an unique salt and the cookie digests
+        $strAsl = $this->_getIncapsulaAsl($strDigests, $strSalt);
+
+        $strNewCookieValue = implode(',',$arrExtensions) . ",digest=" . $strDigests .",s=".$strAsl;
 
         $strFinalIncapsulaCookie = $this->_createCookie("___utmvc", $strNewCookieValue, 20);
         $strCookiestr='';
@@ -451,7 +523,9 @@ class IncapsulaProxyValidator
     }
 
     /**
-     * Function that parses a cookie in order to get the in
+     * Function that parses a cookie in order to get
+     * only get the cookies that start with incap_ses_
+     * Needed for the digest
      *
      * @param $strCookie
      * @return array
@@ -459,7 +533,7 @@ class IncapsulaProxyValidator
     private function _getSessionCookies($strCookie)
     {
         $arrCookies = array();
-        if(preg_match_all('%((incap_ses|visid_incap)_[0-9_]+)\s+?([A-Za-z0-9=]+)%s', $strCookie, $arrSessionCookies))
+        if(preg_match_all('%(incap_ses_[0-9_]+)\s+?([A-Za-z0-9=]+)%s', $strCookie, $arrSessionCookies))
         {
             $intCount = count($arrSessionCookies[0]); //TODO be careful (one change made)
             for($i = 0; $i < $intCount; $i++)
@@ -567,6 +641,7 @@ class IncapsulaProxyValidator
         {
             echo 'Curl error: ' . curl_error($ch).PHP_EOL;
         }
+        curl_close($ch);
         if($arrCurlInfo['http_code'] == 200)
         {
             return $strResponse;
