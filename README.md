@@ -1,3 +1,5 @@
+!!! Updated at 2.07.2018 with new logic
+
 ## Description
 This script allows bots to get to content blocked by the Incapsula bot mitigator. It manages this by validating a list of proxies using Incapsula's own algorithm. 
 
